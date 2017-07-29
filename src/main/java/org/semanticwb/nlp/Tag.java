@@ -34,9 +34,6 @@ public class Tag {
     private String label;                     //Label for the tag
     private double probability;               //Probability of the tag.
     private HashMap<String, String> tagInfo;  //Hash of additional information for the tag.
-//    private String URI;
-//    private String clsId;
-//    private String rangeURI;
 
     /**
      * Constructor.
@@ -46,7 +43,7 @@ public class Tag {
      */
     public Tag () {
         label = "";
-        tagInfo = new HashMap<String, String>();
+        tagInfo = new HashMap<>();
     }
 
     /**
@@ -58,7 +55,7 @@ public class Tag {
      */
     public Tag (String t) {
         label = t;
-        tagInfo = new HashMap<String, String>();
+        tagInfo = new HashMap<>();
     }
 
     /**
@@ -109,10 +106,14 @@ public class Tag {
         return probability;
     }
 
-    public boolean equals(Tag tag) {
+    
+    public boolean equals(Object obj) {
         boolean ret = false;
-        if (tag.getLabel().equalsIgnoreCase(label) && tag.getProbability() == probability) {
-            ret = true;
+        if (null != obj && obj instanceof Tag) {
+        		Tag tag = (Tag)obj;
+        		if (tag.getLabel().equalsIgnoreCase(label) && tag.getProbability() == probability) {
+                ret = true;
+            }
         }
         return ret;
     }    

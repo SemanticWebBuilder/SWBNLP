@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,7 +18,7 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.nlp;
 
@@ -38,7 +38,7 @@ import org.semanticwb.platform.SemanticProperty;
 
 /**
  * Lexicon para un idioma determinado.
- * @author Hasdai Pacheco {ebenezer.sanchez@infotec.com.mx}
+ * @author Hasdai Pacheco {ebenezer.sanchez@infotec.mx}
  */
 public class SWBLocaleLexicon {
     public static final String OBJ_TAG = "OBJ"; //SemanticClass
@@ -102,11 +102,11 @@ public class SWBLocaleLexicon {
         langCode = languageCode;
         langName = languageName;
         maxWordLength = 0;
-        prefixHash = new HashMap<String, String>();
-        objHash = new HashMap<String, Word>();
-        propHash = new HashMap<String, Word>();
+        prefixHash = new HashMap<>();
+        objHash = new HashMap<>();
+        propHash = new HashMap<>();
         if (!prexFilter.trim().equals(""))
-            prefixFilters = new ArrayList<String>(Arrays.asList(prexFilter.split(",")));
+            prefixFilters = new ArrayList<>(Arrays.asList(prexFilter.split(",")));
 
         prefixHash.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
         prefixHash.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -236,30 +236,29 @@ public class SWBLocaleLexicon {
      * @return Snowball form for the word characters.
      */
     public String getSnowballForm(String input) {
-        String res = "";
+        StringBuilder res = new StringBuilder();
 
         //Create snowball analyzer
-        Set stopTable = StopFilter.makeStopSet(Version.LUCENE_36, stopWords);
-        Analyzer SnballAnalyzer = new SnowballAnalyzer(Version.LUCENE_36, langName, stopTable);
+        Set<Object> stopTable = StopFilter.makeStopSet(Version.LUCENE_36, stopWords);
+        Analyzer snballAnalyzer = new SnowballAnalyzer(Version.LUCENE_36, langName, stopTable);
 
         //Create token stream for prhase composition
-        TokenStream ts = SnballAnalyzer.tokenStream("sna", new StringReader(input));
+        TokenStream ts = snballAnalyzer.tokenStream("sna", new StringReader(input));
 
         //Build the result string with the analyzed tokens
         try {
             boolean hasNext = ts.incrementToken();
             while (hasNext) {
                 CharTermAttribute ta = ts.getAttribute(CharTermAttribute.class);
-                res = res + ta.toString() + " ";
+                res.append(ta.toString()).append(" ");
                 hasNext = ts.incrementToken();
-                //res = res + new String(tk.termBuffer(), 0, tk.termLength()) + " ";
             }
             ts.close();
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(SWBLocaleLexicon.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return res.trim();
+        return res.toString().trim();
     }
 
     public String getPrefixString () {
@@ -282,7 +281,7 @@ public class SWBLocaleLexicon {
     }
 
     public Iterator<Word> listWords () {
-        ArrayList<Word> totWords = new ArrayList<Word>();
+        ArrayList<Word> totWords = new ArrayList<>();
         totWords.addAll(objHash.values());
         totWords.addAll(propHash.values());
 
@@ -311,7 +310,7 @@ public class SWBLocaleLexicon {
     }
 
     public List<String> getWordLexForms(boolean asObjects) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (asObjects) {
             Iterator<Word> vals = objHash.values().iterator();
             while(vals.hasNext()) {
@@ -330,7 +329,7 @@ public class SWBLocaleLexicon {
     }
 
     public List<String> getWordLexForms() {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         Iterator<Word> vals = objHash.values().iterator();
         while(vals.hasNext()) {
             Word val = vals.next();

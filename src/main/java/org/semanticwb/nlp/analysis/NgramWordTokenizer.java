@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,7 +18,7 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.nlp.analysis;
 
@@ -30,12 +30,12 @@ import java.util.List;
 
 /**
  *
- * @author Hasdai Pacheco {haxdai@gmail.com}
+ * @author Hasdai Pacheco {ebenezer.sanchez@infotec.mx}
  */
 public class NgramWordTokenizer {
     public static final int DEFAULT_MIN_NGRAM_SIZE = 1;
     public static final int DEFAULT_MAX_NGRAM_SIZE = 2;
-    private String s_inStr;
+    private String sInStr;
     private int minWordsInToken;
     private int maxWordsInToken;
     private int gramSize;
@@ -46,6 +46,10 @@ public class NgramWordTokenizer {
     private String[] listDelimiters = {" ", ","};
     private Reader input;
     
+    /**
+     * Constructor.
+     * @param input
+     */
     public NgramWordTokenizer(Reader input) {
         this(input, DEFAULT_MIN_NGRAM_SIZE, DEFAULT_MAX_NGRAM_SIZE);
     }    
@@ -63,6 +67,12 @@ public class NgramWordTokenizer {
         maxWordsInToken = maxWords;
     }
 
+    /**
+     * Gets next token in tokenizer.
+     * @param reusableToken
+     * @return
+     * @throws IOException
+     */
     public final Token next(final Token reusableToken) throws IOException {
         assert reusableToken != null;
         if(!started) {
@@ -70,7 +80,7 @@ public class NgramWordTokenizer {
             gramSize = minWordsInToken;
             char[] chars = new char[1024];
             input.read(chars);
-            s_inStr = new String(chars).trim();
+            sInStr = new String(chars).trim();
             chunks = getChunks();
             inLen = chunks.size();
         }
@@ -84,29 +94,32 @@ public class NgramWordTokenizer {
 
         int tokenStart = chunks.get(pos).getStart();
         int tokenEnd = chunks.get(pos).getEnd();
-        String ts = "";
+        StringBuilder ts = new StringBuilder();
         for (int i = pos; i < pos + gramSize; i++) {
-            ts += chunks.get(i).getText() + " ";
+            ts.append(chunks.get(i).getText()).append(" ");
             tokenEnd = chunks.get(i).getEnd();
         }
-        ts = ts.trim();
         pos++;
 
-        return reusableToken.reinit(ts, tokenStart , tokenEnd);
+        return reusableToken.reinit(ts.toString().trim(), tokenStart , tokenEnd);
     }
 
+    /**
+     * Gets string chuks.
+     * @return List with chunked string.
+     */
     private ArrayList<Token> getChunks() {
-        ArrayList<Token> ret = new ArrayList<Token>();
-        String c_inStr = s_inStr;
+        ArrayList<Token> ret = new ArrayList<>();
+        String cInStr = sInStr;
         
         for (int i = 0; i < listDelimiters.length; i++) {
-            c_inStr = c_inStr.replaceAll(listDelimiters[i], " " + listDelimiters[i] + " ");
+        		cInStr = cInStr.replaceAll(listDelimiters[i], " " + listDelimiters[i] + " ");
         }
 
-        List<String> tc = Arrays.asList(c_inStr.split("[\\s]+"));
+        List<String> tc = Arrays.asList(cInStr.split("[\\s]+"));
         int lp = 0;
         for(String s : tc) {
-            lp = c_inStr.indexOf(s, lp);
+            lp = cInStr.indexOf(s, lp);
             ret.add(new Token(s, lp, lp + s.length() - 1));
             lp += s.length() + 1;
         }
@@ -114,6 +127,10 @@ public class NgramWordTokenizer {
         return ret;
     }
 
+    /**
+     * Sets tokenizer delimiters.
+     * @param delimiters Array with delimiter strings.
+     */
     public void setListDelimiters(String [] delimiters) {
         listDelimiters = delimiters;
     }

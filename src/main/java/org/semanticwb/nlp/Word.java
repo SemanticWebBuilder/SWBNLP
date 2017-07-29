@@ -23,7 +23,6 @@
 package org.semanticwb.nlp;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Word. Palabra.
@@ -73,7 +72,7 @@ public class Word {
     public Word(String lexForm) {
         lexicalForm = lexForm;
         lemma = "";
-        wTags = new ArrayList<Tag>();
+        wTags = new ArrayList<>();
         selected = null;
     }
 
@@ -94,9 +93,7 @@ public class Word {
     }
 
     public boolean isSynonymOf(Word w) {
-        if (synSet.contains(w.getLemma()) || lemma.equals(w.getLemma()))
-            return true;
-        return false;
+        return synSet.contains(w.getLemma()) || lemma.equals(w.getLemma());
     }    
 
     /**

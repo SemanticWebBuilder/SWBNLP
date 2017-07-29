@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,7 +18,7 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.nlp;
 
@@ -27,29 +27,29 @@ import org.semanticwb.SWBPlatform;
 
 /**
  * Diccionario para procesamiento de lenguaje natural. Contiene uno o varios
- * LEXIcons en distintos idiomas.
+ * Lexicons en distintos idiomas.
  * @author Hasdai Pacheco {haxdai@gmail.com}
  */
 public class SWBDictionary {
 
     private static HashMap<String, SWBLocaleLexicon> lexicons;
-    private static SWBDictionary SWBDictInstance = null;    
+    private static SWBDictionary swbDictInstance = null;    
     private static HashMap<String, String> langMap;
     private static String defLang = "es";
     private static String spellDictPath;
 
     private SWBDictionary () {}
 
-    private synchronized static void createInstance() {
-        if (SWBDictInstance == null) {
-            SWBDictInstance = new SWBDictionary();
-            lexicons = new HashMap<String, SWBLocaleLexicon>();            
-            SWBDictInstance.addLexicon(new SWBLocaleLexicon());
+    private static synchronized void createInstance() {
+        if (swbDictInstance == null) {
+        		swbDictInstance = new SWBDictionary();
+            lexicons = new HashMap<>();            
+            swbDictInstance.addLexicon(new SWBLocaleLexicon());
         }
     }
 
     public static SWBDictionary getInstance() {
-        if (SWBDictInstance == null) createInstance();
+        if (swbDictInstance == null) createInstance();
 
         if (langMap == null) {
             langMap = new HashMap<String, String>();
@@ -66,7 +66,7 @@ public class SWBDictionary {
             spellDictPath = SWBPlatform.createInstance().getPlatformWorkPath() + "/index/spell_" +
                     defLang + ".txt";
         }
-        return SWBDictInstance;
+        return swbDictInstance;
     }
 
     public SWBLocaleLexicon getLexicon(String languageCode) {
@@ -94,7 +94,7 @@ public class SWBDictionary {
         getLexicon(defLang).getWord(lexForm, asObject).setTag(tag);
     }
 
-    public void setLocale(String langCode) {
+    public static void setLocale(String langCode) {
         if (lexicons.get(langCode) != null) defLang = langCode;
     }
 
