@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,30 +18,22 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.portal.admin.resources;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.semanticwb.SWBPlatform;
-import org.semanticwb.portal.api.GenericResource;
-import org.semanticwb.portal.api.SWBActionResponse;
-import org.semanticwb.portal.api.SWBParamRequest;
-import org.semanticwb.portal.api.SWBResourceException;
-import org.semanticwb.portal.api.SWBResourceURL;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.semanticwb.SWBPlatform;
 import org.semanticwb.model.User;
 import org.semanticwb.nlp.SWBDictionary;
 import org.semanticwb.nlp.SWBLocaleLexicon;
@@ -50,8 +42,19 @@ import org.semanticwb.platform.SemanticClass;
 import org.semanticwb.platform.SemanticModel;
 import org.semanticwb.platform.SemanticObject;
 import org.semanticwb.platform.SemanticProperty;
+import org.semanticwb.portal.api.GenericResource;
+import org.semanticwb.portal.api.SWBActionResponse;
+import org.semanticwb.portal.api.SWBParamRequest;
+import org.semanticwb.portal.api.SWBResourceException;
+import org.semanticwb.portal.api.SWBResourceURL;
+import org.semanticwb.portal.lib.SWBResponse;
 
-// TODO: Auto-generated Javadoc
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+
 /**
  * Recurso para consulta en lenguaje natural acotado a la base de datos de
  * Jena. Utiliza un traductor de lenguaje natural a SparQl.
@@ -97,11 +100,7 @@ public class SWBADBNatural extends GenericResource {
         String sparqlQuery = request.getParameter("sparqlQuery");
         String dym = request.getParameter("didYouMean");
         User user = paramRequest.getUser();
-        StringBuffer sbf = new StringBuffer();
-
-        /*response.setContentType("text/html; charset=iso-8859-1");
-        response.setHeader("Cache-control", "no-cache");
-        response.setHeader("Pragma", "no-cache");*/
+        StringBuilder sbf = new StringBuilder();
 
         //Create lexicon for NLP
         lex = SWBDictionary.getInstance();
@@ -113,12 +112,12 @@ public class SWBADBNatural extends GenericResource {
                 SWBLocaleLexicon l = new SWBLocaleLexicon(lang, SWBDictionary.getLanguageName(lang));
                 l.buildLexicon();
                 lex.addLexicon(l);
-                lex.setLocale(lang);
+                SWBDictionary.setLocale(lang);
             }
         } else {
             if (!lang.equals("es")) {
                 lang = "es";
-                lex.setLocale("es");
+                SWBDictionary.setLocale("es");
             }
         }        
 
@@ -402,7 +401,6 @@ public class SWBADBNatural extends GenericResource {
 
         sbf.append("<form id=\"" + getResourceBase().getId() + "/natural\" dojoType=\"dijit.form.Form\" class=\"swbform\" " +
                    "action=\"" + aUrl + "\" method=\"post\" >\n" +
-        //sbf.append("onsubmit=\"submitForm('" + getResourceBase().getId() + "/natural'); return false;\">");
                    "  <fieldset>\n" + paramRequest.getLocaleString("lblExamples") +
                    "      <PRE>\n" +
                    "1. Usuario con activo = true, [Primer Apellido]\n" +
@@ -427,12 +425,6 @@ public class SWBADBNatural extends GenericResource {
         //If no translation errors, execute SparQl query
         if (errCount != null) {
             if (Integer.parseInt(errCount) == 0) {
-                /*sbf.append("<fieldset>");
-                sbf.append("<textarea rows=5 cols=70>");
-                sbf.append(request.getParameter("sparqlQuery"));
-                sbf.append("</textarea>");
-                sbf.append("</fieldset>");*/
-
                 try {
                     Model model = SWBPlatform.getSemanticMgr().getOntology().getRDFOntModel();
                     SemanticModel mod = new SemanticModel("local", model);
@@ -551,14 +543,6 @@ public class SWBADBNatural extends GenericResource {
             //Create SparQl translator
             tr = new SWBSparqlTranslator(lex);
             queryString = lex.getLexicon(lang).getPrefixString() + "\n" + tr.translateSentence(query, false);
-            //System.out.println("--->Query String:");
-            //System.out.println(queryString);
-            //dym = tr.didYouMean(query);
-
-            //If no different suggestion
-            //if (query.toLowerCase().equals(dym.toLowerCase())) {
-            //    dym = "";
-            //}
 
             response.setRenderParameter("errCode", Integer.toString(tr.getErrCode()));
             response.setRenderParameter("sparqlQuery", queryString);
@@ -570,7 +554,7 @@ public class SWBADBNatural extends GenericResource {
             response.setRenderParameter("naturalQuery", query);
             response.setRenderParameter("didYouMean", dym);
         }
-        response.setMode(response.Mode_VIEW);
+        response.setMode(SWBResourceURL.Mode_VIEW);
     }
 
     /**
@@ -584,7 +568,7 @@ public class SWBADBNatural extends GenericResource {
      */
     public void doSuggest(HttpServletRequest request, HttpServletResponse response, SWBParamRequest paramRequest) throws SWBResourceException, IOException {
         PrintWriter out = response.getWriter();
-        StringBuffer sbf = new StringBuffer();
+        StringBuilder sbf = new StringBuilder();
         SortedSet objOptions = new TreeSet();
         SortedSet proOptions = new TreeSet();
         String word = request.getParameter("word");
@@ -594,7 +578,6 @@ public class SWBADBNatural extends GenericResource {
         boolean rPar = false;
         int idCounter = 0;
 
-        //System.out.println("--Suggesting " + (props?" properties":"") + " for word " + word);
         word = URLDecoder.decode(word, "iso-8859-1");
 
         response.setContentType("text/html; charset=iso-8859-1");
@@ -639,7 +622,6 @@ public class SWBADBNatural extends GenericResource {
 
             if (proOptions.size() != 0 || objOptions.size() != 0) {
                 idCounter = 0;
-                int index;
                 Iterator<String> rit = objOptions.iterator();
 
                 sbf.append("<ul id=\"resultlist\" class=\"resultlist\" style=\"background:white;list-style-type:none;" +
@@ -647,7 +629,6 @@ public class SWBADBNatural extends GenericResource {
                         "200px;width:300px;border:1px solid #a0a0ff;\">");
                 while (rit.hasNext()) {
                     String tempi = (String) rit.next();
-                    index = tempi.toLowerCase().indexOf(word.toLowerCase());
 
                     sbf.append("<li id=\"id" + idCounter + "\" class=\"resultEntry\" " +
                             "onmouseover=\"dojo.query('.resultEntry').style('background', 'white'); " +
@@ -663,7 +644,6 @@ public class SWBADBNatural extends GenericResource {
                 rit = proOptions.iterator();
                 while (rit.hasNext()) {
                     String tempi = (String) rit.next();
-                    index = tempi.toLowerCase().indexOf(word.toLowerCase());
 
                     sbf.append("<li id=\"id" + idCounter + "\" class=\"resultEntry\" " +
                             "onmouseover=\"dojo.query('.resultEntry').style('background', 'white'); " +
@@ -679,8 +659,6 @@ public class SWBADBNatural extends GenericResource {
             }
         } else { //User has queried property of an object
             String tag = lex.getLexicon(lang).getWord(word, true).getTags().get(0).getTagInfoParam(SWBLocaleLexicon.PARAM_ID);
-            //String tag = lex.getObjWordTag(word).getObjId();
-
             sbf.append("<ul id=\"resultlist\" class=\"resultlist\" style=\"background:white;list-style-type:none;" +
                     "position:absolute;margin:0;padding:0;overflow:auto;max-height:" +
                     "200px;width:300px;border:1px solid #a0a0ff;\">");
@@ -705,7 +683,6 @@ public class SWBADBNatural extends GenericResource {
                 tag = lex.getLexicon(lang).getWord(word, false).getSelectedTag().getTagInfoParam(SWBLocaleLexicon.PARAM_ID);
                 SemanticClass sc = SWBPlatform.getSemanticMgr().getVocabulary().getSemanticClass(tag);
                 tag = sc.getPrefix() + ":" + sc.getName();
-                //tag = lex.getPropWordTag(word).getRangeClassId();
                 if (!tag.equals("")) {
                     sc = SWBPlatform.getSemanticMgr().getVocabulary().getSemanticClassById(tag);
                     idCounter = 0;
