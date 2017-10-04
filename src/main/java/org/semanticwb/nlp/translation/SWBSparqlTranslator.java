@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,14 +18,14 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.nlp.translation;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import org.semanticwb.nlp.analysis.ComplexParser;
 import java.util.List;
+
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.Lexer;
@@ -34,6 +34,7 @@ import org.semanticwb.SWBPlatform;
 import org.semanticwb.nlp.SWBDictionary;
 import org.semanticwb.nlp.SWBLocaleLexicon;
 import org.semanticwb.nlp.Tag;
+import org.semanticwb.nlp.analysis.ComplexParser;
 import org.semanticwb.nlp.analysis.EnglishLexer;
 import org.semanticwb.nlp.analysis.SpanishLexer;
 import org.semanticwb.nlp.spell.SWBSpellChecker;
@@ -54,15 +55,10 @@ import org.semanticwb.platform.SemanticVocabulary;
  * @author Hasdai Pacheco {ebenezer.sanchez@infotec.com.mx}
  */
 public class SWBSparqlTranslator {
-    private ComplexParser parser;     //ANTLR parser
-    private Lexer tokenizer;   //ANTLR tokenizer
     private SWBDictionary lex;        //Dictionary
-    private CommonTokenStream tokens;   //TokenStream for parsing
-    private ANTLRStringStream input;    //StringStream to parse
     private String nodeLabels = "SELECT|PRECON|PREDE|ASIGN|COMPL|COMPG|COMPLE|COMPGE|OFFSET|LIMIT|ORDER|COMPAS|COMPRNG|INTERVAL";
-    private String eLog = "";   //Error log
+    private StringBuilder eLog = new StringBuilder();   //Error log
     private int errCode = 0;    //Last error code
-    private SWBSpellChecker speller = null;
     private boolean emptyQuery = false;
     private String lang;
     private static final String  SPARQL_SELECT_DISTINCT = "SELECT DISTINCT";
@@ -95,7 +91,6 @@ public class SWBSparqlTranslator {
         lex = dict;
         //TODO: agregar soporte multi-lenguajes
         lang = "es";
-        speller = new SWBSpellChecker(lex.getSpellDictPath());
     }
 
     /**
@@ -110,26 +105,24 @@ public class SWBSparqlTranslator {
     public String translateSentence(String sent, boolean sRequired) {
         StringBuilder res = new StringBuilder();
         CommonTree sTree = null;
-        input = new ANTLRStringStream(sent);
-        tokenizer = getLocaleLexer(lex.getLexicon(lang).getLanguageCode(), input);
-        tokens = new CommonTokenStream(tokenizer);
-        parser = new ComplexParser(tokens);
+        ANTLRStringStream input = new ANTLRStringStream(sent);
+        Lexer tokenizer = getLocaleLexer(lex.getLexicon(lang).getLanguageCode(), input);
+        CommonTokenStream tokens = new CommonTokenStream(tokenizer);
+        ComplexParser parser = new ComplexParser(tokens);
 
         try {
             ComplexParser.squery_return qres = (ComplexParser.squery_return) parser.squery();
             if (parser.getErrorCount() == 0) {
                 sTree = (CommonTree) qres.getTree();
                 fixNames(sTree);
-                //traverseAST(sTree, "");
                 res.append(processSelectQuery(sTree, parser.hasPrecon(), parser.hasPrede(), sRequired));
-                //System.out.println(res.toString());
             } else {
                 errCode = 2;
-                eLog += "La consulta no está bien escrita.\n";
+                eLog.append("La consulta no está bien escrita.\n");
             }
         } catch (org.antlr.runtime.RecognitionException ex) {
             errCode = 2;
-            eLog += "No se ha podido traducir la consulta.\n";
+            eLog.append("No se ha podido traducir la consulta.\n");
         }
         return res.toString();
     }
@@ -170,8 +163,8 @@ public class SWBSparqlTranslator {
     private String processSelectQuery(CommonTree root, boolean hasPrecon, boolean hasPrede, boolean subjectRequired) {
         StringBuilder res = new StringBuilder();
         String subject = "";
-        String limitoff = "";
-        String order = "";
+        StringBuilder limitoff = new StringBuilder();
+        StringBuilder order = new StringBuilder();
         StringBuilder varList = new StringBuilder();
         StringBuilder patterns = new StringBuilder();
 
@@ -180,15 +173,14 @@ public class SWBSparqlTranslator {
             res.append(SPARQL_SELECT_DISTINCT+" ");
             for (CommonTree t : child) {
                 if (t.getText().equals(AST_LIMIT_TAG)) {
-                    limitoff = limitoff + " "+ AST_LIMIT_TAG + " " + t.getChild(0).getText() + "\n";
+                    limitoff.append(" ").append(AST_LIMIT_TAG).append(" ").append(t.getChild(0).getText()).append("\n");
                 } else if (t.getText().equals(AST_ORDER_TAG)) {
-                    order = order + " " + SPARQL_ORDER + " ";
+                    order.append(" ").append(SPARQL_ORDER).append(" ");
                     for (CommonTree oit : (List<CommonTree>) t.getChildren()) {
-                        order = order + "?" + oit.getText().replace(" ", "_").replaceAll("[\\(|\\)]", "") + " ";
+                        order.append("?").append(oit.getText().replace(" ", "_").replaceAll("[\\(|\\)]", "")).append(" ");
                     }
-                    order = order.trim() + "\n";
                 } else if (t.getText().equals(AST_OFFSET_TAG)) {
-                    limitoff = limitoff + " " + AST_OFFSET_TAG + " " + t.getChild(0).getText() + "\n";
+                    limitoff.append(" ").append(AST_OFFSET_TAG).append(" ").append(t.getChild(0).getText()).append("\n");
                 } else if (t.getText().equals(AST_DEFINE_TAG)) {
                     subject = t.getChild(0).getText().replace(" ", "_").replaceAll("[\\(|\\)]", "");
                     res.append(" ?description \nWHERE \n{\n");
@@ -220,22 +212,21 @@ public class SWBSparqlTranslator {
                     if (lex.getLexicon(lang).getWord(t.getText(), true) != null) {
                         etype = lex.getLexicon(lang).getWord(t.getText(), true).getTags().get(0).getTagInfoParam(SWBLocaleLexicon.PARAM_ID);
                     }
-                    //String etype = lex.getObjWordTag(t.getText()).getType();
                     if (!etype.equals("")) {
                         patterns.append("?").append(t.getText().replace(" ", "_").replaceAll("[\\(|\\)]", ""));
                         patterns.append(" rdf:type ").append(etype).append(".\n");
                         patterns.append(parseAST(t));
                     } else {
                         errCode = 2;
-                        eLog = eLog + t.getText() + " no es una clase.";
+                        eLog.append(t.getText()).append(" no es una clase.");
                     }
                 }
             }
         }
-        if (patterns.equals("")) {
+        if (patterns.toString().equals("")) {
             emptyQuery = true;
         }
-        res.append(patterns).append("}").append(order).append(limitoff);
+        res.append(patterns).append("}").append(order.toString()).append("\n").append(limitoff);
         return res.toString(); 
     }
 
@@ -247,15 +238,15 @@ public class SWBSparqlTranslator {
      * @return 
      */
     private String parseAST(CommonTree root) {
-        String res = "";
+        StringBuilder res = new StringBuilder();
         List<CommonTree> child = (List<CommonTree>) root.getChildren();
 
         if (child != null) {
             for (CommonTree t : child) {
-                res += processNode(t, root.getText(), root.getText());
+                res.append(processNode(t, root.getText(), root.getText()));
             }
         }
-        return res;
+        return res.toString();
     }
 
     /**
@@ -272,7 +263,6 @@ public class SWBSparqlTranslator {
         List<CommonTree> child = (List<CommonTree>) root.getChildren();
         String nname = root.getText();
 
-        //System.out.println(nname + "[ " + parent + ", " + parentLabel + "]");
         if (nname.equals(AST_PRECON_TAG)) {
             //Procesar los hijos con el padre del actual
             if (child != null) {
@@ -342,7 +332,6 @@ public class SWBSparqlTranslator {
         String pName = getPropertyName(root.getChild(0).getText(), parent);
         res.append("?").append(parentLabel.replace(" ", "_").replaceAll("[\\(|\\)]", "")).append(" ").append(pName);
         
-        //System.out.println("verificando " + root.getChild(0).getText() + " de " + parent + " con etiqueta " + parentLabel);
         if (root.getText().equals(AST_ASIGNATION_TAG)) {
             if (!pName.equals("")) {
                 res.append(" ").append(root.getChild(1).getText()).append(".\n");
@@ -403,7 +392,7 @@ public class SWBSparqlTranslator {
      */
     private String getVarList(CommonTree root, String parent) {
         StringBuilder res = new StringBuilder();
-        if (root.getChild(0).getText().equals(AST_ALLFROM_TAG)) { //'todo de' query
+        if (root.getChild(0).getText().equals(AST_ALLFROM_TAG)) {
             res.append("?");
             res.append(parent.replace(" ", "_").replaceAll("[\\(|\\)]", ""));
             res.append(" ?prop ?val");
@@ -441,8 +430,8 @@ public class SWBSparqlTranslator {
                 if (sp != null) {
                     ret = sp.getPrefix() + ":" + sp.getName();
                 } else {
-                    eLog += "La clase " + className + " no tiene una propiedad llamada " +
-                            propertyName;
+                    eLog.append("La clase ").append(className).append(" no tiene una propiedad llamada ")
+                        .append(propertyName);
                     errCode = 3;
                 }
             }
@@ -461,50 +450,26 @@ public class SWBSparqlTranslator {
      */
     public boolean assertRelation (String className, String propertyName) {
         SemanticVocabulary vocabulary = SWBPlatform.getSemanticMgr().getVocabulary();
-        //System.out.println("--Asserting " + propertyName + " from " + className);
         boolean ret = false;
         SemanticClass sc = vocabulary.getSemanticClass(lex.getLexicon(lang).getWord(className, true).getTags().get(0).getTagInfoParam(SWBLocaleLexicon.PARAM_URI));
 
-        if (sc != null) {
-            if (lex.getLexicon(lang).getWord(propertyName, false) != null) {
-                //Check property for all posible tags
-                ArrayList<Tag> tags = lex.getLexicon(lang).getWord(propertyName, false).getTags();
-                Iterator<Tag> tit = tags.iterator();
+        if (sc != null && lex.getLexicon(lang).getWord(propertyName, false) != null) {
+            //Check property for all posible tags
+            ArrayList<Tag> tags = lex.getLexicon(lang).getWord(propertyName, false).getTags();
+            Iterator<Tag> tit = tags.iterator();
 
-                while(tit.hasNext() && !ret) {
-                    Tag t = tit.next();
+            while(tit.hasNext() && !ret) {
+                Tag t = tit.next();
 
-                    SemanticProperty sp = vocabulary.getSemanticProperty(t.getTagInfoParam(SWBLocaleLexicon.PARAM_URI));
-                    if (sp != null && sc.getProperty(sp.getName()) != null) {
-                        ret = true;
-                        lex.getLexicon(lang).getWord(propertyName, false).setSelectedTag(t);
-                    }
+                SemanticProperty sp = vocabulary.getSemanticProperty(t.getTagInfoParam(SWBLocaleLexicon.PARAM_URI));
+                if (sp != null && sc.getProperty(sp.getName()) != null) {
+                    ret = true;
+                    lex.getLexicon(lang).getWord(propertyName, false).setSelectedTag(t);
                 }
             }
         }
         return ret;
     }
-
-//    public SemanticClass getPropertyRangeClass(String propertyName, String className) {
-//        SemanticVocabulary vocabulary = SWBPlatform.getSemanticMgr().getVocabulary();
-//        if (assertRelation(className, propertyName)) {
-//            SemanticClass sc = vocabulary.getSemanticClass(lex.getLexicon(lang).getWord(className, true).getTags().get(0).getTagInfoParam(SWBLocaleLexicon.PARAM_URI));
-//            if (sc != null) {
-//                SemanticProperty sp = vocabulary.getSemanticProperty(lex.getLexicon(lang).getWord(propertyName, false).getSelectedTag().getTagInfoParam(SWBLocaleLexicon.PARAM_URI));
-//                if (sp != null) {
-//                    SemanticClass rg = SWBPlatform.getSemanticMgr().getVocabulary().getSemanticClass(sp.getRangeClass().getURI());
-//                    if (rg != null) {
-//                        return rg;
-//                    }
-//                } else {
-//                    eLog += "La clase " + className + " no tiene una propiedad llamada " +
-//                        propertyName + "\n";
-//                    errCode = 3;
-//                }
-//            }
-//        }
-//        return null;
-//    }
     
     /**
      * Gets the name of the range class of a property.
@@ -527,8 +492,8 @@ public class SWBSparqlTranslator {
                         ret = rg.getDisplayName(lex.getLexicon(lang).getLanguageCode());
                     }
                 } else {
-                    eLog += "La clase " + className + " no tiene una propiedad llamada " +
-                        propertyName + "\n";
+                    eLog.append("La clase ").append(className).append(" no tiene una propiedad llamada ")
+                    		.append(propertyName).append("\n");
                     errCode = 3;
                 }
             }
@@ -558,8 +523,8 @@ public class SWBSparqlTranslator {
                         ret = rg.getPrefix() + ":" + rg.getName();
                     }
                 } else {
-                    eLog += "La clase " + className + " no tiene una propiedad llamada " +
-                        propertyName + "\n";
+                    eLog.append("La clase ").append(className).append(" no tiene una propiedad llamada ")
+                        .append(propertyName).append("\n");
                     errCode = 3;
                 }
             }
@@ -581,7 +546,7 @@ public class SWBSparqlTranslator {
     }
 
     public String getErrors() {
-        return eLog;
+        return eLog.toString();
     }
 
     public boolean isEmptyQuery() {

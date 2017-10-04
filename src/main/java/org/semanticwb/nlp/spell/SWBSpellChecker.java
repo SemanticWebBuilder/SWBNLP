@@ -6,7 +6,7 @@
  * procesada por personas y/o sistemas, es una creación original del Fondo de Información y Documentación
  * para la Industria INFOTEC, cuyo registro se encuentra actualmente en trámite.
  *
- * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público (‘open source’),
+ * INFOTEC pone a su disposición la herramienta SemanticWebBuilder a través de su licenciamiento abierto al público ('open source'),
  * en virtud del cual, usted podrá usarlo en las mismas condiciones con que INFOTEC lo ha diseñado y puesto a su disposición;
  * aprender de él; distribuirlo a terceros; acceder a su código fuente y modificarlo, y combinarlo o enlazarlo con otro software,
  * todo ello de conformidad con los términos y condiciones de la LICENCIA ABIERTA AL PÚBLICO que otorga INFOTEC para la utilización
@@ -18,7 +18,7 @@
  *
  * Si usted tiene cualquier duda o comentario sobre SemanticWebBuilder, INFOTEC pone a su disposición la siguiente
  * dirección electrónica:
- *  http://www.semanticwebbuilder.org
+ *  http://www.semanticwebbuilder.org.mx
  */
 package org.semanticwb.nlp.spell;
 
@@ -50,8 +50,6 @@ import org.semanticwb.SWBUtils;
 public class SWBSpellChecker {
     /**Lucene SpellChecker object*/
     private SpellChecker checker = null;
-    /**Lucene Dictionary to store words for spelling suggestions*/
-    private LuceneDictionary spellDict = null;
     /**Directory to store spell indexes*/
     private Directory spellDir = null;
     /**Number of max suggestions to retrieve*/
@@ -118,7 +116,7 @@ public class SWBSpellChecker {
         try {
             spellDir = new RAMDirectory();
             checker = new SpellChecker(spellDir);
-            spellDict = new LuceneDictionary(IndexReader.open(FSDirectory.open(new File(dirPath))), fieldName);
+            LuceneDictionary spellDict = new LuceneDictionary(IndexReader.open(FSDirectory.open(new File(dirPath))), fieldName);
             checker.indexDictionary(spellDict, new IndexWriterConfig(Version.LUCENE_36, new StandardAnalyzer(Version.LUCENE_36)), false);
         } catch (Exception ex) {
            log.error(ex);
@@ -181,17 +179,16 @@ public class SWBSpellChecker {
      *              cadena de entrada o null si no existen palabras similares.
      */
     public String[] suggestSimilar(String word) {
+    		String res[] = {};
         if (checker != null) {
             try {
-                if (checker.exist(word)) {
-                    return null;
+                if (!checker.exist(word)) {
+                		res = checker.suggestSimilar(word, numSug);
                 }
-                String res[] = checker.suggestSimilar(word, numSug);
-                return res;
             } catch (Exception ex) {
                 log.error(ex);
             }
         }
-        return null;
+        return res;
     }
 }
